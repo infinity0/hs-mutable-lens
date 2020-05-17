@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -11,6 +12,7 @@
 
 module Control.Lens.Mutable.Types where
 
+import           Control.Lens.Lens       (ALens', cloneLens)
 import           Control.Lens.Type       (Lens', LensLike')
 import           Control.Monad.Primitive (PrimBase (..), PrimMonad (..))
 import           GHC.Conc                (STM (..))
@@ -48,27 +50,30 @@ data S (p :: PrimOpGroup) s = S (State# s)
 -- transition, i.e. a function of type @(a -> (r, a))@.
 type LST p s r = S p s -> (r, S p s)
 
--- | Convert an @'LST' p@ to and from some monadic action @m@.
+-- | Convert an @'LST' p@ to and from some context @m@.
 --
 -- This is similar to 'PrimMonad' and 'PrimBase' from the @primitives@ package
 -- except our extra @p@ type-param helps us avoid accidentally mixing
 -- incompatible primops.
-class MonadLST p s m where
+class IsoLST p s m where
   stToM :: LST p s r -> m r
   mToST :: m r -> LST p s r
 
-instance (PrimBase m, s ~ PrimState m) => MonadLST 'OpST s m where
+instance (PrimBase m, s ~ PrimState m) => IsoLST 'OpST s m where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
 
 -- same as OpST, we just forcibly keep them apart to be safe
-instance MonadLST 'OpMVar RealWorld IO where
+instance IsoLST 'OpMVar RealWorld IO where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
 
-instance MonadLST 'OpSTM RealWorld STM where
+instance IsoLST 'OpSTM RealWorld STM where
   stToM st = STM $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
   mToST (STM state#) (S s1#) = let !(# s2#, a #) = state# s1# in (a, S s2#)
+
+-- | Convert an @'LST p@ to and from some monadic action @m@.
+type MonadLST p s m = (IsoLST p s m, Monad m)
 
 -- | Representation of a mutable reference as a 'Lens''.
 --
@@ -81,6 +86,12 @@ instance MonadLST 'OpSTM RealWorld STM where
 -- details that seemed appropriate to hide at the time.
 type SLens p s a = Lens' (S p s) a
 
+-- | Representation of a mutable reference as a 'ALens''.
+--
+-- This type is useful if you need to store a lens in a container. To recover
+-- the original type, pass it through 'Control.Lens.cloneLens'.
+type ASLens p s a = ALens' (S p s) a
+
 -- ** Convenience functions
 
 -- These are all compositions of the basic functions above, provided for
@@ -90,8 +101,12 @@ type SLens p s a = Lens' (S p s) a
 --
 -- The lens may be an @'SLens' p@ or any compositions of it with other optics,
 -- including prisms and so forth.
-runSLens :: MonadLST p s m => LensLike' ((,) r) (S p s) a -> (a -> (r, a)) -> m r
+runSLens :: IsoLST p s m => LensLike' ((,) r) (S p s) a -> (a -> (r, a)) -> m r
 runSLens = fmap stToM
+
+-- | Run a bare state transition on an 'ALens'' in the monad for @p@.
+runASLens :: IsoLST p s m => ALens' (S p s) a -> (a -> (r, a)) -> m r
+runASLens = runSLens . cloneLens
 
 -- | A bare state transition representing a read operation.
 stateRead :: a -> (a, a)

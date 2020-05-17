@@ -3,10 +3,13 @@ module Control.Lens.Mutable
     PrimOpGroup(..)
   , S(..)
   , LST
-  , MonadLST(..)
+  , IsoLST(..)
+  , MonadLST
   , SLens
+  , ASLens
   -- ** Convenience utilities
   , runSLens
+  , runASLens
   , stateRead
   , stateWrite
   , stateModify

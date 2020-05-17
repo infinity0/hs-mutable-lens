@@ -25,6 +25,7 @@ import           Unsafe.Coerce                (unsafeCoerce)
 import           Control.Lens.Mutable.Types
 
 
+-- | Convert a reference type to a 'SLens'.
 class AsLens p s ref where
   asLens :: ref a -> SLens p s a
 

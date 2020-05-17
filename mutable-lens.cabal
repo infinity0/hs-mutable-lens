@@ -1,6 +1,6 @@
 Cabal-Version:       2.4
 Name:                mutable-lens
-Version:             0.1.0.0
+Version:             0.2.0.0
 Synopsis:            Interoperate mutable references with regular lens
 Description:
   Use mutable references as lens, compose them with other lens, and run them. 

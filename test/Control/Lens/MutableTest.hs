@@ -29,7 +29,6 @@ smoke
   :: forall p s m ref
    . MonadLST p s m
   => AsLens p s ref
-  => Monad m
   => (ComplexStruct -> m (ref ComplexStruct))
   -> (ref ComplexStruct -> m ComplexStruct)
   -> (forall a . m a -> IO a)
