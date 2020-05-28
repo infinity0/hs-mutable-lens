@@ -13,8 +13,9 @@ module Control.Lens.Mutable
   , stateRead
   , stateWrite
   , stateModify
-  -- ** Specific lens for various mutable reference types
+  -- ** Typeclasses and instances
   , AsLens(..)
+  , Allocable(..)
   )
 where
 
