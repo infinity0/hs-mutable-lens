@@ -1,6 +1,6 @@
 # Revision history for mutable-lens
 
-## 0.3.0.0 -- UNRELEASED
+## 0.3.0.0 -- 2020-05-28
 
 * Add Allocable typeclass for creating new references.
 
