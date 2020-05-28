@@ -50,30 +50,42 @@ data S (p :: PrimOpGroup) s = S (State# s)
 -- transition, i.e. a function of type @(a -> (r, a))@.
 type LST p s r = S p s -> (r, S p s)
 
+-- | Convert an @'LST' p@ to some context @m@.
+--
+-- This is similar to 'PrimMonad' from the @primitives@ package except our
+-- extra @p@ type-param helps us avoid accidentally mixing incompatible primops.
+class FromLST p s m where
+  stToM :: LST p s r -> m r
+
 -- | Convert an @'LST' p@ to and from some context @m@.
 --
--- This is similar to 'PrimMonad' and 'PrimBase' from the @primitives@ package
--- except our extra @p@ type-param helps us avoid accidentally mixing
--- incompatible primops.
-class IsoLST p s m where
-  stToM :: LST p s r -> m r
+-- This is similar to 'PrimBase' from the @primitives@ package except our extra
+-- @p@ type-param helps us avoid accidentally mixing incompatible primops.
+
+class FromLST p s m => IsoLST p s m where
   mToST :: m r -> LST p s r
 
-instance (PrimBase m, s ~ PrimState m) => IsoLST 'OpST s m where
+instance (PrimMonad m, s ~ PrimState m) => FromLST 'OpST s m where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+
+instance (PrimBase m, s ~ PrimState m) => IsoLST 'OpST s m where
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
 
 -- same as OpST, we just forcibly keep them apart to be safe
-instance IsoLST 'OpMVar RealWorld IO where
+instance FromLST 'OpMVar RealWorld IO where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+
+instance IsoLST 'OpMVar RealWorld IO where
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
 
-instance IsoLST 'OpSTM RealWorld STM where
+instance FromLST 'OpSTM RealWorld STM where
   stToM st = STM $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+
+instance IsoLST 'OpSTM RealWorld STM where
   mToST (STM state#) (S s1#) = let !(# s2#, a #) = state# s1# in (a, S s2#)
 
--- | Convert an @'LST p@ to and from some monadic action @m@.
-type MonadLST p s m = (IsoLST p s m, Monad m)
+-- | Convert an @'LST p@ from some monadic action @m@.
+type MonadLST p s m = (FromLST p s m, Monad m)
 
 -- | Representation of a mutable reference as a 'Lens''.
 --
@@ -101,11 +113,11 @@ type ASLens p s a = ALens' (S p s) a
 --
 -- The lens may be an @'SLens' p@ or any compositions of it with other optics,
 -- including prisms and so forth.
-runSLens :: IsoLST p s m => LensLike' ((,) r) (S p s) a -> (a -> (r, a)) -> m r
+runSLens :: FromLST p s m => LensLike' ((,) r) (S p s) a -> (a -> (r, a)) -> m r
 runSLens = fmap stToM
 
 -- | Run a bare state transition on an 'ALens'' in the monad for @p@.
-runASLens :: IsoLST p s m => ALens' (S p s) a -> (a -> (r, a)) -> m r
+runASLens :: FromLST p s m => ALens' (S p s) a -> (a -> (r, a)) -> m r
 runASLens = runSLens . cloneLens
 
 -- | A bare state transition representing a read operation.

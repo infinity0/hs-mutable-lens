@@ -1,5 +1,9 @@
 # Revision history for mutable-lens
 
+## 0.4.0.0 -- UNRELEASED
+
+* Split IsoLST into FromLST, of which there are more instances.
+
 ## 0.3.0.0 -- 2020-05-28
 
 * Add Allocable typeclass for creating new references.

@@ -3,6 +3,7 @@ module Control.Lens.Mutable
     PrimOpGroup(..)
   , S(..)
   , LST
+  , FromLST(..)
   , IsoLST(..)
   , MonadLST
   , SLens
