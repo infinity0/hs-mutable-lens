@@ -1,6 +1,6 @@
 # Revision history for mutable-lens
 
-## 0.4.0.0 -- UNRELEASED
+## 0.4.0.0 -- 2020-05-29
 
 * Split IsoLST into FromLST, of which there are more instances.
 * Update to GHC 8.10.1
