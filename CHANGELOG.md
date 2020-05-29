@@ -3,6 +3,7 @@
 ## 0.4.0.0 -- UNRELEASED
 
 * Split IsoLST into FromLST, of which there are more instances.
+* Update to GHC 8.10.1
 
 ## 0.3.0.0 -- 2020-05-28
 

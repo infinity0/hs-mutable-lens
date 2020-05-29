@@ -1,6 +1,6 @@
 Cabal-Version:       2.4
 Name:                mutable-lens
-Version:             0.3.0.0
+Version:             0.4.0.0
 Synopsis:            Interoperate mutable references with regular lens
 Description:
   Use mutable references as lens, compose them with other lens, and run them.
@@ -44,7 +44,7 @@ Author:              Ximin Luo
 Maintainer:          infinity0@pwned.gg
 Copyright:           2020 Ximin Luo
 category:            Data, Lenses, Generics
-Tested-With:         GHC >= 8.8.3
+Tested-With:         GHC >= 8.10.1
 Extra-Source-Files:  CHANGELOG.md
 
 Source-Repository head
@@ -61,10 +61,12 @@ Common generic
   Build-Depends: base >= 4 && < 5,
   GHC-Options:
     -Wall
+    -Wcompat
     -Wno-unused-matches
     -Wredundant-constraints
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wunused-packages
   if flag(dev)
     GHC-Options:
       -Werror
@@ -92,7 +94,6 @@ Test-Suite doctests
   GHC-Options: -threaded
   Build-Depends:
       doctest
-    , mutable-lens
   HS-Source-Dirs: test
   Type: exitcode-stdio-1.0
   Main-Is: DocTests.hs
@@ -102,9 +103,7 @@ Test-Suite unit
   GHC-Options: -threaded
   Build-Depends:
       tasty
-    , tasty-quickcheck
     , tasty-hunit
-    , checkers
     , containers
     , lens
     , mutable-lens
