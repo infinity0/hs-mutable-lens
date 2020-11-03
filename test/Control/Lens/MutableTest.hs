@@ -76,7 +76,7 @@ data AllocMap k v = AllocMap
   { aNext  :: !k
   , aStore :: !(Map k v)
   }
- deriving (Show, Read, Generic, Eq, Ord)
+  deriving (Show, Read, Generic, Eq, Ord)
 makeLensesFor ((\x -> (x, "_" <> x)) <$> ["aNext", "aStore"]) ''AllocMap
 
 instance Ord k => AsLens (AllocMap k v) v (Const k) where

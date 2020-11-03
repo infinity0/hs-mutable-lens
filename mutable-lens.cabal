@@ -26,13 +26,13 @@ Description:
   @writeSomeVar@ to @writeOtherVar@, or was it @putOtherVar@, and does the
   @atomicModifyVar@ function take a @s -> (a, s)@ or a @s -> (s, a)@ again?
   .
-  On the other hand, this package has not been optimised for performance, and
+  A word of warning: this package has not been optimised for performance, and
   currently only supports GHC. We would certainly welcome contributions in
-  these areas, if you are interested in running this code in production. Until
-  that happens, please be cautious and treat this code as experimental.
-  .
-  For what it's worth, the API is likely to be very stable: an isomorphism to
-  another well-established library, is not a complex API.
+  these areas, if you are interested in running this code in production. On the
+  other hand for what it's worth, our initial benchmarks suggest that the
+  performance degradation is not signficant - ~13% with -O2 in a program that
+  reads and writes to references and does no other useful work. In a real
+  program that does other useful work, this number will be smaller.
   .
   See unit tests for example usage, e.g.
   <https://github.com/infinity0/hs-mutable-lens/tree/master/test/Control/Lens/MutableTest.hs MutableTest>
@@ -52,7 +52,14 @@ Source-Repository head
   Location: https://github.com/infinity0/hs-mutable-lens
 
 Flag dev
-  Description: Set compile flags for development
+  Description:
+    Set compile flags for development.
+  Default:     False
+  Manual:      True
+
+Flag release
+  Description:
+    Set compile flags for release-checking. Users don't need this.
   Default:     False
   Manual:      True
 
@@ -69,12 +76,22 @@ Common generic
     -Wunused-packages
   if flag(dev)
     GHC-Options:
-      -Werror
       -O2
     -- some optimisations cause memory leaks; switch on -O2 and profiling so we
     -- can detect this during development so it doesn't cause surprises later
     GHC-Prof-Options:
-      -fprof-auto
+    -- note: adding -fprof-auto gives unfair benchmark results with profiling,
+    -- since many more SCCs are added for our code than for GHC native refs.
+  if flag(release)
+    GHC-Options:
+      -Werror
+
+Common executable
+  GHC-Options:
+    -threaded
+  if flag(dev)
+    GHC-Options:
+      -rtsopts
 
 Library
   Import: generic
@@ -90,8 +107,7 @@ Library
     , Control.Lens.Mutable.Types
 
 Test-Suite doctests
-  Import: generic
-  GHC-Options: -threaded
+  Import: generic, executable
   Build-Depends:
       doctest
   HS-Source-Dirs: test
@@ -99,8 +115,7 @@ Test-Suite doctests
   Main-Is: DocTests.hs
 
 Test-Suite unit
-  Import: generic
-  GHC-Options: -threaded
+  Import: generic, executable
   Build-Depends:
       tasty
     , tasty-hunit
@@ -115,3 +130,13 @@ Test-Suite unit
   Main-Is: UnitTests.hs
   Other-Modules:
       Control.Lens.MutableTest
+
+Benchmark basic-benchmark
+  Import: generic, executable
+  Build-Depends:
+      mutable-lens
+    , extra >= 1.7
+    , primitive
+  HS-Source-Dirs: test
+  Type: exitcode-stdio-1.0
+  Main-Is: BasicBenchmark.hs

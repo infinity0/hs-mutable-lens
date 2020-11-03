@@ -1,5 +1,10 @@
 # Revision history for mutable-lens
 
+## 0.4.1.0 -- UNRELEASED
+
+* Add a benchmark.
+* INLINE most functions, and make `S` strict in its inner field.
+
 ## 0.4.0.0 -- 2020-05-29
 
 * Split IsoLST into FromLST, of which there are more instances.

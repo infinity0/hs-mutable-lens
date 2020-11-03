@@ -23,6 +23,7 @@ import           GHC.Exts                     (MVar#, RealWorld, State#,
                                                writeTVar#)
 import           GHC.IORef                    (IORef (..))
 import           GHC.MVar                     (MVar (..))
+import           GHC.Stack                    (HasCallStack)
 import           GHC.STRef                    (STRef (..))
 import           Unsafe.Coerce                (unsafeCoerce)
 
@@ -38,14 +39,17 @@ instance AsLens (S 'OpST s) a (MutVar s) where
   asLens (MutVar var#) f (S s1#) =
     let !(# s2#, valr #) = readMutVar# var# s1#
     in  fmap (\valw -> S (writeMutVar# var# valw s2#)) (f valr)
+  {-# INLINE asLens #-}
 
 instance AsLens (S 'OpST s) a (STRef s) where
   asLens (STRef var#) f (S s1#) =
     let !(# s2#, valr #) = readMutVar# var# s1#
     in  fmap (\valw -> S (writeMutVar# var# valw s2#)) (f valr)
+  {-# INLINE asLens #-}
 
 instance AsLens (S 'OpST RealWorld) a IORef where
   asLens (IORef stref) = asLens stref
+  {-# INLINE asLens #-}
 
 -- | View a @'MVar' a@ as a @'SLens' \''OpST' 'RealWorld' a@.
 --
@@ -62,11 +66,13 @@ instance AsLens (S 'OpMVar RealWorld) a MVar where
   asLens (MVar var#) f (S s1#) =
     let !(# s2#, valr #) = takeMVar# var# s1#
     in  fmap (\valw -> S (putMVar# var# valw s2#)) (f valr)
+  {-# INLINE asLens #-}
 
 instance AsLens (S 'OpSTM RealWorld) a TVar where
   asLens (TVar var#) f (S s1#) =
     let !(# s2#, valr #) = readTVar# var# s1#
     in  fmap (\valw -> S (writeTVar# var# valw s2#)) (f valr)
+  {-# INLINE asLens #-}
 
 instance AsLens (S 'OpSTM RealWorld) a TMVar where
   asLens (tmvar :: TMVar a) f (S s1#) =
@@ -77,6 +83,7 @@ instance AsLens (S 'OpSTM RealWorld) a TMVar where
           Just v  -> v
           Nothing -> let (# _, a #) = retry# s1# in a
     in  fmap (\valw -> S (writeTVar# var# (Just valw) s2#)) (f valr)
+  {-# INLINE asLens #-}
 
 
 -- | A state in which you can allocate new references.
@@ -95,8 +102,9 @@ class AsLens s a ref => Allocable s a ref where
   returns the old value. The caller is responsible for actually throwing away
   the reference and never using it again, as per Haskell's GC semantics.
   -}
-  free :: ref a -> s -> (a, s)
+  free :: HasCallStack => ref a -> s -> (a, s)
   free ref = asLens ref (, error "use-after-free")
+  {-# INLINE free #-}
 
   {- | Check if a reference is valid.
 
@@ -107,29 +115,36 @@ class AsLens s a ref => Allocable s a ref where
   -}
   isValid :: ref a -> s -> (Bool, s)
   isValid ref = asLens ref $ \r -> (r `seq` True, r)
+  {-# INLINE isValid #-}
 
 instance Allocable (S 'OpST s) a (MutVar s) where
   alloc val (S s1#) =
     let !(# s2#, var# #) = newMutVar# val s1# in (MutVar var#, S s2#)
+  {-# INLINE alloc #-}
 
 instance Allocable (S 'OpST s) a (STRef s) where
   alloc val (S s1#) =
     let !(# s2#, var# #) = newMutVar# val s1# in (STRef var#, S s2#)
+  {-# INLINE alloc #-}
 
 instance Allocable (S 'OpST RealWorld) a IORef where
   alloc val s = let (r, s') = alloc val s in (IORef r, s')
+  {-# INLINE alloc #-}
 
 instance Allocable (S 'OpMVar RealWorld) a MVar where
   alloc (val :: a) (S s1#) =
     let !(# s2#, var# #) =
-            newMVar# s1# :: (# State# RealWorld, MVar# RealWorld a #)
+          newMVar# s1# :: (# State# RealWorld, MVar# RealWorld a #)
     in  (MVar var#, S (putMVar# var# val s2#))
+  {-# INLINE alloc #-}
 
 instance Allocable (S 'OpSTM RealWorld) a TVar where
   alloc val (S s1#) =
     let !(# s2#, var# #) = newTVar# val s1# in (TVar var#, S s2#)
+  {-# INLINE alloc #-}
 
 instance Allocable (S 'OpSTM RealWorld) a TMVar where
   alloc val (S s1#) =
     let !(# s2#, var# #) = newTVar# (Just val) s1#
     in  (unsafeCoerce (TVar var#), S s2#)
+  {-# INLINE alloc #-}

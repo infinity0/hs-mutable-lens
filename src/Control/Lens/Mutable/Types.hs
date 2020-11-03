@@ -38,8 +38,8 @@ data PrimOpGroup = OpST | OpMVar | OpSTM
 -- | Lifted 'State#'. This is needed to interoperate lifted ("normal") types
 -- and unlifted types (such as primitives), but it also gives us the chance to
 -- restrict composition based on 'PrimOpGroup' which sadly isn't done in the
--- unlifted internal representation (though it could be).
-data S (p :: PrimOpGroup) s = S (State# s)
+-- unlifted internal representation, though it could be.
+data S (p :: PrimOpGroup) s = S !(State# s)
 
 -- | A lifted primitive state-transformer that interoperates with lens.
 --
@@ -67,22 +67,28 @@ class FromLST p s m => IsoLST p s m where
 
 instance (PrimMonad m, s ~ PrimState m) => FromLST 'OpST s m where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+  {-# INLINE stToM #-}
 
 instance (PrimBase m, s ~ PrimState m) => IsoLST 'OpST s m where
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
+  {-# INLINE mToST #-}
 
 -- same as OpST, we just forcibly keep them apart to be safe
 instance FromLST 'OpMVar RealWorld IO where
   stToM st = primitive $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+  {-# INLINE stToM #-}
 
 instance IsoLST 'OpMVar RealWorld IO where
   mToST prim (S s1#) = let !(# s2#, a #) = internal prim s1# in (a, S s2#)
+  {-# INLINE mToST #-}
 
 instance FromLST 'OpSTM RealWorld STM where
   stToM st = STM $ \s1# -> let !(a, S s2#) = st (S s1#) in (# s2#, a #)
+  {-# INLINE stToM #-}
 
 instance IsoLST 'OpSTM RealWorld STM where
   mToST (STM state#) (S s1#) = let !(# s2#, a #) = state# s1# in (a, S s2#)
+  {-# INLINE mToST #-}
 
 -- | Convert an @'LST p@ from some monadic action @m@.
 type MonadLST p s m = (FromLST p s m, Monad m)
@@ -115,23 +121,28 @@ type ASLens p s a = ALens' (S p s) a
 -- including prisms and so forth.
 runSLens :: FromLST p s m => LensLike' ((,) r) (S p s) a -> (a -> (r, a)) -> m r
 runSLens = fmap stToM
+{-# INLINE runSLens #-}
 
 -- | Run a bare state transition on an 'ALens'' in the monad for @p@.
 runASLens :: FromLST p s m => ALens' (S p s) a -> (a -> (r, a)) -> m r
 runASLens = runSLens . cloneLens
+{-# INLINE runASLens #-}
 
 -- | A bare state transition representing a read operation.
 stateRead :: a -> (a, a)
 stateRead a = (a, a)
+{-# INLINE stateRead #-}
 
 -- | A bare state transition representing a write operation.
 --
 -- @'stateWrite' b@ can be passed to 'runSLens' to write @b@ to the reference.
 stateWrite :: b -> a -> ((), b)
 stateWrite b a = ((), b)
+{-# INLINE stateWrite #-}
 
 -- | A bare state transition representing a modify/map operation.
 --
 -- @'stateModify' f@ can be passed to 'runSLens' to apply @f@ to the reference.
 stateModify :: (a -> b) -> a -> ((), b)
-stateModify f a = ((), f a)
+stateModify f a = ((), f $! a)
+{-# INLINE stateModify #-}
