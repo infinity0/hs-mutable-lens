@@ -1,6 +1,6 @@
 # Revision history for mutable-lens
 
-## 0.4.1.0 -- UNRELEASED
+## 0.4.1.0 -- 2020-11-25
 
 * Add a benchmark.
 * INLINE most functions, and make `S` strict in its inner field.
