@@ -17,8 +17,7 @@ module Control.Lens.Mutable
   -- ** Typeclasses and instances
   , AsLens(..)
   , Allocable(..)
-  )
-where
+  ) where
 
 import           Control.Lens.Mutable.Internal
 import           Control.Lens.Mutable.Types

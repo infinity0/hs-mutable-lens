@@ -23,8 +23,8 @@ import           GHC.Exts                     (MVar#, RealWorld, State#,
                                                writeTVar#)
 import           GHC.IORef                    (IORef (..))
 import           GHC.MVar                     (MVar (..))
-import           GHC.Stack                    (HasCallStack)
 import           GHC.STRef                    (STRef (..))
+import           GHC.Stack                    (HasCallStack)
 import           Unsafe.Coerce                (unsafeCoerce)
 
 -- internal

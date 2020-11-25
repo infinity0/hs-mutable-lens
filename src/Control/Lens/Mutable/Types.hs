@@ -1,20 +1,22 @@
-{-# LANGUAGE BangPatterns          #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MagicHash             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UnboxedTuples         #-}
+{-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE ConstraintKinds          #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE DeriveGeneric            #-}
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE MagicHash                #-}
+{-# LANGUAGE MultiParamTypeClasses    #-}
+{-# LANGUAGE PolyKinds                #-}
+{-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeFamilies             #-}
+{-# LANGUAGE UnboxedTuples            #-}
 
 module Control.Lens.Mutable.Types where
 
 import           Control.Lens.Lens       (ALens', cloneLens)
 import           Control.Lens.Type       (Lens', LensLike')
 import           Control.Monad.Primitive (PrimBase (..), PrimMonad (..))
+import           Data.Kind               (Type)
 import           GHC.Conc                (STM (..))
 import           GHC.Exts                (RealWorld, State#)
 import           GHC.Generics            (Generic)
@@ -39,7 +41,8 @@ data PrimOpGroup = OpST | OpMVar | OpSTM
 -- and unlifted types (such as primitives), but it also gives us the chance to
 -- restrict composition based on 'PrimOpGroup' which sadly isn't done in the
 -- unlifted internal representation, though it could be.
-data S (p :: PrimOpGroup) s = S !(State# s)
+type S :: PrimOpGroup -> Type -> Type
+data S p s = S !(State# s)
 
 -- | A lifted primitive state-transformer that interoperates with lens.
 --

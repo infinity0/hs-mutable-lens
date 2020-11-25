@@ -2,7 +2,7 @@
 shopt -s globstar
 shopt -s nullglob
 targets='{app,src,test}/**/*.hs'
-brittany_flags="--write-mode=inplace --columns=84 --omit-output-check"
+brittany_flags="--write-mode=inplace --omit-output-check"
 
 eval brittany "\"\$@\"" $brittany_flags  "$targets"
 # work around brittany not recognising GADTs properly (#261, #79)
