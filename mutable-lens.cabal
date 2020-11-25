@@ -1,6 +1,6 @@
 Cabal-Version:       2.4
 Name:                mutable-lens
-Version:             0.4.0.0
+Version:             0.4.1.0
 Synopsis:            Interoperate mutable references with regular lens
 Description:
   Use mutable references as lens, compose them with other lens, and run them.
@@ -39,7 +39,7 @@ Description:
 Homepage:            https://github.com/infinity0/hs-mutable-lens
 Bug-Reports:         https://github.com/infinity0/hs-mutable-lens/issues
 License:             Apache-2.0
-License-File:        LICENSE
+License-File:        LICENSE.Apache-2
 Author:              Ximin Luo
 Maintainer:          infinity0@pwned.gg
 Copyright:           2020 Ximin Luo
